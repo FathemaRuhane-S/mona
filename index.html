@@ -1,0 +1,328 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Puzzle Game</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #080808, #1a0a19, #250b24);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+    flex-direction: column;
+    color: #fff;
+}
+
+h1 {
+    color: #ff4fa3;
+    text-align: center;
+    margin-bottom: 15px;
+    text-shadow: 0 0 10px #ff1493, 0 0 25px #ff1493;
+    padding: 0 15px;
+}
+
+#startScreen,
+#winScreen {
+    text-align: center;
+    padding: 20px;
+}
+
+button {
+    padding: 12px 28px;
+    border: 1px solid #ff4fa3;
+    border-radius: 15px;
+    background: linear-gradient(135deg, #ff1493, #a00068);
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    margin-top: 15px;
+    box-shadow: 0 0 15px #ff149377;
+    transition: 0.3s;
+}
+
+button:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 25px #ff1493;
+}
+
+#puzzle {
+    width: min(300px, 90vw);
+    height: min(300px, 90vw);
+    display: none;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 3px;
+    padding: 5px;
+    background: #301029;
+    border: 2px solid #ff4fa3;
+    border-radius: 12px;
+    box-shadow: 0 0 25px #ff149377;
+}
+
+.tile {
+    width: 100%;
+    height: 100%;
+    background-image: url('cute.jpg');
+    background-size: 300% 300%;
+    border: 1px solid #5a1744;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: filter 0.2s, border 0.2s;
+}
+
+.tile:hover {
+    filter: brightness(1.2);
+    border: 2px solid #ff4fa3;
+}
+
+.empty {
+    background: #130b16;
+}
+
+#birthdayVideo {
+    width: min(300px, 85vw);
+    height: min(300px, 85vw);
+    display: none;
+    object-fit: cover;
+    border-radius: 20px;
+    border: 2px solid #ff4fa3;
+    box-shadow: 0 0 25px #ff149399;
+    margin: auto;
+    background: #080808;
+}
+
+#birthdayText {
+    display: none;
+    font-size: clamp(25px, 6vw, 35px);
+    color: #ff4fa3;
+    text-align: center;
+    animation: pop 1s infinite alternate;
+}
+
+@keyframes pop {
+    from { transform: scale(1); }
+    to { transform: scale(1.08); }
+}
+
+.confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    top: -10px;
+    animation: fall linear forwards;
+    pointer-events: none;
+}
+
+@keyframes fall {
+    to {
+        transform: translateY(110vh) rotate(720deg);
+    }
+}
+
+.heart {
+    position: absolute;
+    bottom: -20px;
+    font-size: 20px;
+    animation: floatUp linear forwards;
+    opacity: 0.8;
+    pointer-events: none;
+}
+
+@keyframes floatUp {
+    from {
+        transform: translateY(0) scale(1);
+        opacity: 0.8;
+    }
+    to {
+        transform: translateY(-110vh) scale(1.5);
+        opacity: 0;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div id="startScreen">
+    <h1>
+        Lunalis♡<br><br>
+        Solve this puzzle!<br>
+        𐙚 🖤
+    </h1>
+    <button onclick="startGame()">Start ♡</button>
+</div>
+
+<div id="puzzle"></div>
+
+<div id="winScreen">
+    <h1 id="birthdayText">
+        🎉 ehee you won 🎉<br>
+        -`♡´- ✮
+    </h1>
+     <video id="birthdayVideo"
+       src="birthday.mp4"
+       controls
+       playsinline
+       preload="metadata">
+    Your browser does not support video playback.
+</video>
+    </div>
+
+<script>
+const playMusic = new Audio("./play.mp3");
+const winMusic = new Audio("./win.mp3");
+
+playMusic.loop = true;
+
+const puzzle = document.getElementById("puzzle");
+
+let selectedTile = null;
+let tiles = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+
+function shuffle(array) {
+    // Randomize until the puzzle is solvable.
+    do {
+        for (let i = array.length - 1; i > 0; i--) {
+            let j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    } while (!isSolvable(array) || isSolved(array));
+}
+
+function isSolvable(array) {
+    let inversions = 0;
+
+    for (let i = 0; i < array.length; i++) {
+        for (let j = i + 1; j < array.length; j++) {
+            if (array[i] !== 8 && array[j] !== 8 &&
+                array[i] > array[j]) {
+                inversions++;
+            }
+        }
+    }
+
+    return inversions % 2 === 0;
+}
+
+function isSolved(array) {
+    return array.every((tile, index) => tile === index);
+}
+
+shuffle(tiles);
+
+function createPuzzle() {
+    puzzle.innerHTML = "";
+
+    tiles.forEach((tile, index) => {
+        const div = document.createElement("div");
+        div.classList.add("tile");
+
+        if (tile === 8) {
+            div.classList.add("empty");
+            div.style.backgroundImage = "none";
+        } else {
+            const x = (tile % 3) * 50;
+            const y = Math.floor(tile / 3) * 50;
+
+            div.style.backgroundPosition = `${x}% ${y}%`;
+        }
+
+        if (selectedTile === index) {
+            div.style.border = "3px solid #ffff66";
+            div.style.boxShadow = "0 0 15px #ff1493";
+        }
+
+        div.addEventListener("click", () => selectTile(index));
+        puzzle.appendChild(div);
+    });
+}
+
+function selectTile(index) {
+    if (selectedTile === null) {
+        selectedTile = index;
+        createPuzzle();
+    } else {
+        [tiles[selectedTile], tiles[index]] =
+        [tiles[index], tiles[selectedTile]];
+
+        selectedTile = null;
+        createPuzzle();
+        checkWin();
+    }
+}
+
+function checkWin() {
+    if (isSolved(tiles)) {
+        setTimeout(() => {
+            puzzle.style.display = "none";
+
+            document.getElementById("birthdayText").style.display = "block";
+            const video = document.getElementById("birthdayVideo");
+            video.style.display = "block";
+            video.play().catch(() => {});
+            playMusic.pause();
+            winMusic.currentTime = 0;
+            winMusic.play().catch(() => {});
+
+            launchConfetti();
+            launchHearts();
+        }, 500);
+    }
+}
+
+function launchConfetti() {
+    for (let i = 0; i < 120; i++) {
+        const confetti = document.createElement("div");
+        confetti.classList.add("confetti");
+
+        confetti.style.left = Math.random() * 100 + "vw";
+        confetti.style.animationDuration = (Math.random() * 3 + 2) + "s";
+        confetti.style.backgroundColor =
+            `hsl(${Math.random() * 360}, 100%, 60%)`;
+
+        document.body.appendChild(confetti);
+
+        setTimeout(() => confetti.remove(), 5000);
+    }
+}
+
+function launchHearts() {
+    for (let i = 0; i < 25; i++) {
+        const heart = document.createElement("div");
+        heart.classList.add("heart");
+        heart.innerHTML = "💖";
+
+        heart.style.left = Math.random() * 100 + "vw";
+        heart.style.animationDuration = (Math.random() * 4 + 4) + "s";
+        heart.style.fontSize = (Math.random() * 20 + 20) + "px";
+
+        document.body.appendChild(heart);
+
+        setTimeout(() => heart.remove(), 8000);
+    }
+}
+
+function startGame() {
+    document.getElementById("startScreen").style.display = "none";
+    puzzle.style.display = "grid";
+
+    playMusic.currentTime = 0;
+    playMusic.play().catch(() => {});
+
+    createPuzzle();
+}
+</script>
+
+</body>
+</html>
