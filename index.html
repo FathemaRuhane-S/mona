@@ -181,7 +181,7 @@ button:hover {
 
 <script>
 const playMusic = new Audio("./play.mp3");
-const winMusic = new Audio("./win.mp3");
+
 
 playMusic.loop = true;
 
@@ -262,24 +262,28 @@ function selectTile(index) {
     }
 }
 
+
 function checkWin() {
     if (isSolved(tiles)) {
         setTimeout(() => {
             puzzle.style.display = "none";
 
             document.getElementById("birthdayText").style.display = "block";
+
             const video = document.getElementById("birthdayVideo");
             video.style.display = "block";
+            video.currentTime = 0;
             video.play().catch(() => {});
+
+            // Stop the background music
             playMusic.pause();
-            winMusic.currentTime = 0;
-            winMusic.play().catch(() => {});
 
             launchConfetti();
             launchHearts();
         }, 500);
     }
 }
+
 
 function launchConfetti() {
     for (let i = 0; i < 120; i++) {
